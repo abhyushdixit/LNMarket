@@ -1,0 +1,12 @@
+# Ignore dependency folders globally
+node_modules/
+dist/
+build/
+
+# Ignore local environment variable secrets everywhere
+.env
+.env.local
+backend/.env
+
+# Ignore system files
+.DS_Store
