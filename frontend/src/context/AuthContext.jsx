@@ -2,7 +2,7 @@ import { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
 // 🎯 PRESERVED: Set the global backend URL here so no component forces absolute strings
-axios.defaults.baseURL = 'http://localhost:5000';
+axios.defaults.baseURL = 'https://lnmarket-backend.onrender.com';
 
 export const AuthContext = createContext();
 
