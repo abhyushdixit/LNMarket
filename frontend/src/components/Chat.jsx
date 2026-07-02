@@ -15,7 +15,7 @@ export default function Chat({ listing, roomId, onClose }) {
     if (!roomId) return;
 
     // Initialize Socket connection targeting the explicit backend port
-    socket = io('http://localhost:5000');
+    socket = io('https://lnmarket-backend.onrender.com');
     
     socket.emit('joinRoom', { room: roomId });
 
