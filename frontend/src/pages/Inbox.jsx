@@ -3,7 +3,7 @@ import axios from 'axios';
 import io from 'socket.io-client';
 import { AuthContext } from '../context/AuthContext'; // 2. Imported global context
 
-const socket = io('http://localhost:5000');
+const socket = io('http://lnmarket-backend.onrender.com');
 
 export default function Inbox() {
   const { fetchUnreadCount } = useContext(AuthContext); // 3. Grab the recalculation trigger
@@ -19,7 +19,7 @@ export default function Inbox() {
   // Fetch all chat threads for the logged-in profile
   const fetchInbox = async () => {
     try {
-      const { data } = await axios.get('http://localhost:5000/api/messages/inbox', {
+      const { data } = await axios.get('http://lnmarket-backend.onrender.com/api/messages/inbox', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setThreads(data);
@@ -39,7 +39,7 @@ export default function Inbox() {
 
     const fetchChatHistory = async () => {
       try {
-        const { data } = await axios.get(`http://localhost:5000/api/messages/${activeRoom}`, {
+        const { data } = await axios.get(`http://lnmarket-backend.onrender.com/api/messages/${activeRoom}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setMessages(data);
