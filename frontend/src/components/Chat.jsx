@@ -20,7 +20,7 @@ export default function Chat({ listing, roomId, onClose }) {
     socket.emit('joinRoom', { room: roomId });
 
     // Explicitly target the full backend port URL to prevent empty relative endpoints
-    axios.get(`http://localhost:5000/api/messages/${roomId}`)
+    axios.get(`http://lnmarket-backend.onrender.com/api/messages/${roomId}`)
       .then(res => setMessages(res.data))
       .catch(err => console.error(err));
 
