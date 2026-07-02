@@ -59,6 +59,11 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// --- BASE PATH PRODUCTION STATUS ROUTE ---
+app.get('/', (req, res) => {
+  res.send('<h1>🚀 LNMarket Backend Server Node Pipeline Status: ONLINE</h1>');
+});
+
 // --- AUTH ROUTES ---
 app.post('/api/auth/register', async (req, res) => {
   try {
@@ -77,8 +82,9 @@ app.post('/api/auth/register', async (req, res) => {
     const user = new User({ name, email, password: hashedPassword, verificationToken });
     await user.save();
 
-    const baseUrl = process.env.APP_URL || 'http://localhost:5000';
-    const verificationLink = `${baseUrl}/api/auth/verify/${verificationToken}`;
+    // Dynamically fallback if no base url environment variable exists
+    const backendBaseUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+    const verificationLink = `${backendBaseUrl}/api/auth/verify/${verificationToken}`;
 
     const mailOptions = {
       from: `"LNMarket Admin" <${process.env.EMAIL_USER}>`, 
@@ -130,11 +136,15 @@ app.get('/api/auth/verify/:token', async (req, res) => {
     user.isVerified = true;
     user.verificationToken = undefined; 
     await user.save();
+
+    // Production Sync: Dynamically fallback if no app url environment variable exists
+    const frontendUrl = process.env.APP_URL || 'http://localhost:5173';
+
     res.send(`
       <div style="text-align: center; margin-top: 50px; font-family: sans-serif;">
         <h1 style="color: #06b6d4;">Email Verified Successfully!</h1>
         <p>Your LNMarket account is now active.</p>
-        <a href="http://localhost:5173" style="padding: 10px 20px; background: #a855f7; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Go to Login</a>
+        <a href="${frontendUrl}" style="padding: 10px 20px; background: #a855f7; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Go to Login</a>
       </div>
     `);
   } catch (err) {
@@ -166,7 +176,6 @@ app.post('/api/listings', auth, upload.array('images', 5), async (req, res) => {
       return res.status(400).json({ message: 'Please upload at least 1 image for your listing.' });
     }
 
-    // When utilizing CloudinaryStorage, the secure cloud web asset URL arrives inside 'file.path'
     const imageUrls = req.files.map(file => file.path);
 
     const listing = new Listing({
@@ -175,7 +184,7 @@ app.post('/api/listings', auth, upload.array('images', 5), async (req, res) => {
       price,
       category,
       images: imageUrls, 
-      imageUrl: imageUrls[0], // Main card thumbnail compatibility fallback link
+      imageUrl: imageUrls[0], 
       seller: req.user.id
     });
 
@@ -199,7 +208,7 @@ app.delete('/api/listings/:id', auth, async (req, res) => {
     const messageCleanup = await Message.deleteMany({ room: { $regex: `^${listingId}_` } });
     console.log(`Cascade cleanup complete: Removed ${messageCleanup.deletedCount} orphaned messages.`);
 
-    // 2. Remove the actual listing document from the collection (Fixed syntax: called on model)
+    // 2. Remove the actual listing document from the collection
     await Listing.findByIdAndDelete(listingId);
     
     res.json({ message: 'Listing and associated chat telemetry removed successfully.' });
@@ -210,7 +219,7 @@ app.delete('/api/listings/:id', auth, async (req, res) => {
 
 // --- CHAT ENGINE ROUTES ---
 
-// 1. NEW: FETCH USER'S ACTIVE CHAT THREADS LIST (INBOX)
+// 1. FETCH USER'S ACTIVE CHAT THREADS LIST (INBOX)
 app.get('/api/messages/inbox', auth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -232,10 +241,7 @@ app.get('/api/messages/inbox', auth, async (req, res) => {
           if (isBuyer || isSeller) {
             seenRooms.add(msg.room);
 
-            // If the current user is the buyer, the other person is the seller (and vice versa)
             const chatPartnerRole = isBuyer ? 'seller' : 'buyer';
-            
-            // Unread calculation: If the last message was NOT sent by me, it's unread
             const isUnread = msg.sender.toString() !== userId;
 
             uniqueRooms.push({
